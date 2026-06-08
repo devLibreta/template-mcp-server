@@ -1,7 +1,7 @@
 {
-  "name": "${COMPOSE_PROJECT_NAME:-template-mcp-server} MCP SSE Dev Container",
+  "name": "template-mcp-server MCP SSE Dev Container",
   "dockerComposeFile": "../docker-compose.dev.yml",
-  "service": "${COMPOSE_PROJECT_NAME:-template-mcp-server}",
+  "service": "template-mcp-server",
   "workspaceFolder": "/workspace",
 
   // VS Code 추천 확장 도구

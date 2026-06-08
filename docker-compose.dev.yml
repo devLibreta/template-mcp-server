@@ -13,7 +13,7 @@ services:
       - ${HOME}/.gitconfig:/root/.gitconfig:ro
       - ${HOME}/.ssh:/root/.ssh:ro
     user: node
-    command: sh -c "pnpm config set store-dir /workspace/.pnpm-store && pnpm install && pnpm build && sleep infinity"
+    command: sleep infinity
 
 volumes:
   node_modules:
