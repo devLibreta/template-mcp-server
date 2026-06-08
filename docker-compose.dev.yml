@@ -15,7 +15,15 @@ services:
       - /Users/server/.gitconfig:/home/node/.gitconfig:ro
       - /Users/server/.ssh:/home/node/.ssh:ro
     user: node
-    command: sleep infinity
+    environment:
+      - HOST=0.0.0.0
+      - PROXY_HOST=0.0.0.0
+    # command: npx tsx watch src/index.ts
+    command: >
+      sh -c "
+        npx @modelcontextprotocol/inspector &
+        npx tsx watch src/index.ts
+      "
 
 volumes:
   node_modules:
