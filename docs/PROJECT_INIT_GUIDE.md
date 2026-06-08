@@ -21,12 +21,24 @@
 ./init-project.sh        # → uses current folder name
 ```
 
-### Step 2: Start developing
+### Step 2: Set up the container
 
 ```bash
-# Docker Compose
-docker compose -f docker-compose.dev.yml up -d
+./setup-container.sh
+```
 
+This script automates:
+
+1. Docker running check
+2. Container start via `docker compose up -d` (if not running)
+3. Wait for container readiness
+4. Fix `/workspace` ownership to `node` user
+5. `pnpm install` (with `.pnpm-store` volume)
+6. `pnpm build`
+
+### Step 3: Start developing
+
+```bash
 # Or VS Code Devcontainer
 # → "Reopen in Container"
 ```
@@ -37,15 +49,15 @@ docker compose -f docker-compose.dev.yml up -d
 
 ## What the script does
 
-| Action | Details |
-| --- | --- |
-| String replacement | `template-mcp-server` → new name across all files |
-| `package.json` | Updates `name` and `bin` keys |
-| `src/index.ts` | Updates server name and log messages |
-| `README.md` | Updates title |
-| `.env` | Updates `COMPOSE_PROJECT_NAME` |
-| `docker-compose.dev.yml` | Updates default env values |
-| `.devcontainer/devcontainer.json` | Updates container name |
+| Action                            | Details                                           |
+| --------------------------------- | ------------------------------------------------- |
+| String replacement                | `template-mcp-server` → new name across all files |
+| `package.json`                    | Updates `name` and `bin` keys                     |
+| `src/index.ts`                    | Updates server name and log messages              |
+| `README.md`                       | Updates title                                     |
+| `.env`                            | Updates `COMPOSE_PROJECT_NAME`                    |
+| `docker-compose.dev.yml`          | Updates default env values                        |
+| `.devcontainer/devcontainer.json` | Updates container name                            |
 
 ---
 
