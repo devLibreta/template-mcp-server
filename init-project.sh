@@ -102,7 +102,18 @@ for file in "${TARGET_FILES[@]}"; do
   fi
 done
 
-# ── Step 2: CamelCase replacement in src/index.ts ──────────────────────
+# ── Step 2: Replace service name in docker-compose.dev.yml ──────────────
+COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.dev.yml"
+if [ -f "$COMPOSE_FILE" ]; then
+  if [[ "$(uname)" == "Darwin" ]]; then
+    sed -i '' "s/  ${OLD_NAME}:/  ${NEW_NAME}:/g" "$COMPOSE_FILE"
+  else
+    sed -i "s/  ${OLD_NAME}:/  ${NEW_NAME}:/g" "$COMPOSE_FILE"
+  fi
+  success "  Service name replaced in docker-compose.dev.yml"
+fi
+
+# ── Step 3: CamelCase replacement in src/index.ts ──────────────────────
 OLD_NAME_CAMEL=$(printf '%s' "$OLD_NAME" | sed 's/-//g')
 NEW_NAME_CAMEL=$(printf '%s' "$NEW_NAME" | sed 's/-//g')
 
