@@ -18,12 +18,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - PROXY_HOST=0.0.0.0
-    # command: npx tsx watch src/index.ts
-    command: >
-      sh -c "
-        npx @modelcontextprotocol/inspector &
-        npx tsx watch src/index.ts
-      "
+    tty: true
 
 volumes:
   node_modules:

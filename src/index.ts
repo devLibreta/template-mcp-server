@@ -1,33 +1,14 @@
-#!/usr/bin/env node
-
-/**
- * MCP SSE Server — template-mcp-server
- * Transport: SSE (Server-Sent Events) via Streamable HTTP
- * Port: 3000 (configurable via MCP_PORT env)
- * Output: dist/index.js
- */
-
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express from "express";
 import { z } from "zod";
 
-// ── MCP Server 인스턴스 생성 ──────────────────────────────────
-const server = new McpServer(
-  {
-    name: "template-mcp-server",
-    version: "0.1.0",
-  },
-  {
-    capabilities: {
-      resources: {},
-      tools: {},
-      prompts: {},
-    },
-  },
-);
+// 1. MCP 서버 선언
+const server = new McpServer({
+  name: "template-mcp-server",
+  version: "0.1.0",
+});
 
-// ── 예시 도구: echo ───────────────────────────────────────────
 server.tool(
   "echo",
   "Echo back the provided message",
@@ -37,35 +18,59 @@ server.tool(
   }),
 );
 
-// ── Express 앱 설정 ───────────────────────────────────────────
 const app = express();
-app.use(express.json());
 
-// Streamable HTTP 엔드포인트
+// 2. 전역 Transport 선언
+const mcpTransport = new StreamableHTTPServerTransport();
+
+// ⭕ 핵심: MCP 라우터 내부를 극도로 단순화합니다.
+// 전역 mcpTransport에 요청을 그대로 '토스'만 해야 내부 세션 테이블(6de55b43-...)이 깨지지 않습니다.
 app.post("/mcp", async (req, res) => {
   try {
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
-    res.on("close", () => transport.close());
-    await server.connect(transport);
-    await transport.handleRequest(req, res);
+    // 만약 앞선 미들웨어가 바디를 훼손했다면 복구하는 방어 코드
+    if (
+      req.body &&
+      typeof req.body === "object" &&
+      !Buffer.isBuffer(req.body)
+    ) {
+      req.body = Buffer.from(JSON.stringify(req.body));
+    }
+
+    // 절대 여기서 transport.close()를 바인딩하지 마세요!
+    await mcpTransport.handleRequest(req, res);
   } catch (error) {
-    console.error("MCP request error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ MCP Engine Internal Error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 });
 
-// 헬스체크
+// 다른 API용 미들웨어는 항상 MCP 아래에 배치
+app.use(express.json());
+
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", server: "devtool", transport: "sse" });
+  res.json({ status: "ok" });
 });
 
-// ── 서버 시작 ─────────────────────────────────────────────────
-const PORT = Number(process.env.MCP_PORT) || 3000;
+// 3. 🚀 서버 기동 함수 (비동기 순서 보장 패턴)
+async function startServer() {
+  try {
+    // 반드시 MCP 서버 커넥션이 "완 완료"된 후에 Express 포트를 열어야 합니다.
+    console.log("🔄 Connecting MCP server to Streamable HTTP transport...");
+    await server.connect(mcpTransport);
+    console.log("🔗 MCP Server connected successfully.");
 
-app.listen(PORT, () => {
-  console.log(`✅ MCP SSE Server [devtool] running on port ${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/health`);
-  console.log(`   MCP:    http://localhost:${PORT}/mcp`);
-});
+    const PORT = Number(process.env.MCP_PORT) || 3000;
+    app.listen(PORT, () => {
+      console.log(`✅ MCP SSE Server [devtool] running on port ${PORT}`);
+      console.log(`   Health: http://localhost:${PORT}/health`);
+      console.log(`   MCP:    http://localhost:${PORT}/mcp`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
