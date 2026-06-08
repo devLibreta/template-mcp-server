@@ -6,6 +6,8 @@ services:
     container_name: template-mcp-server
     ports:
       - "${MCP_PORT:-3000}:3000"
+      - "6274:6274"
+      - "6277:6277"
     volumes:
       - .:/workspace
       - node_modules:/workspace/node_modules
