@@ -1,0 +1,20 @@
+services:
+  ${COMPOSE_PROJECT_NAME:-template-mcp-server}:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ${COMPOSE_PROJECT_NAME:-template-mcp-server}
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+      - pnpm-store:/workspace/.pnpm-store
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - ${HOME}/.ssh:/root/.ssh:ro
+    user: node
+    command: sh -c "pnpm config set store-dir /workspace/.pnpm-store && pnpm install && pnpm build && sleep infinity"
+
+volumes:
+  node_modules:
+  pnpm-store:
