@@ -46,15 +46,15 @@ rm -rf /tmp/mcp-create-output
 
 ### Command breakdown
 
-| Part | Meaning |
-| --- | --- |
-| `docker run --rm` | Auto-remove container after exit |
-| `node:22-alpine` | Node.js 22 LTS base image |
-| `pnpm@9` | Stable pnpm for Node.js 22 |
-| `--name my-mcp-server` | Skip interactive name prompt |
-| `--description "..."` | Skip interactive description prompt |
-| `echo "sse" \|` | Auto-answer transport prompt |
-| `cp -r /tmp/...` | Avoid nested folder duplication |
+| Part                   | Meaning                             |
+| ---------------------- | ----------------------------------- |
+| `docker run --rm`      | Auto-remove container after exit    |
+| `node:22-alpine`       | Node.js 22 LTS base image           |
+| `pnpm@9`               | Stable pnpm for Node.js 22          |
+| `--name my-mcp-server` | Skip interactive name prompt        |
+| `--description "..."`  | Skip interactive description prompt |
+| `echo "sse" \|`        | Auto-answer transport prompt        |
+| `cp -r /tmp/...`       | Avoid nested folder duplication     |
 
 ---
 
@@ -130,7 +130,106 @@ pnpm add -D @types/express
 
 ---
 
-## Step 3: Verify structure
+## Step 3: Add dev environment files
+
+Copy the following files from the template repository into your project:
+
+```
+.devcontainer/devcontainer.json
+.dockerignore
+.env
+docker-compose.dev.yml
+Dockerfile.dev
+init-project.sh
+setup-container.sh
+```
+
+### `.env`
+
+```env
+COMPOSE_PROJECT_NAME=my-mcp-server
+MCP_PORT=3000
+```
+
+### `docker-compose.dev.yml`
+
+```yaml
+services:
+  my-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ${COMPOSE_PROJECT_NAME:-my-mcp-server}
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+      - pnpm-store:/workspace/.pnpm-store
+      - ~/.gitconfig:/home/node/.gitconfig:ro
+      - ~/.ssh:/home/node/.ssh:ro
+    user: node
+    command: sleep infinity
+
+volumes:
+  node_modules:
+  pnpm-store:
+```
+
+> **Note for dev container (VS Code)**: If using Dev Containers, replace `~/.ssh` and `~/.gitconfig` with the absolute host path (e.g., `/Users/<your-user>/.ssh:/home/node/.ssh:ro`) since `${HOME}` resolves to `/home/node` inside the container.
+
+### `Dockerfile.dev`
+
+```dockerfile
+FROM node:22-alpine
+
+RUN apk add --no-cache git openssh-client bash zsh curl
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+RUN npm install -g typescript tsx
+
+RUN adduser -D -s /bin/zsh node
+
+WORKDIR /workspace
+
+USER node
+
+CMD ["sleep", "infinity"]
+```
+
+### `init-project.sh`
+
+Initializes the project by replacing all `template-mcp-server` references with your project name:
+
+```bash
+chmod +x init-project.sh
+./init-project.sh my-mcp-server
+```
+
+This updates: `package.json`, `src/index.ts`, `README.md`, `.env`, `docker-compose.dev.yml`, `.devcontainer/devcontainer.json`.
+
+### `setup-container.sh`
+
+Automates container setup after `docker compose up`:
+
+```bash
+chmod +x setup-container.sh
+./setup-container.sh
+```
+
+This script:
+
+1. Checks Docker is running
+2. Starts the container via `docker compose up -d` if not running
+3. Waits for container readiness
+4. Fixes `/workspace` ownership to `node` user
+5. Runs `pnpm install` (with `.pnpm-store` volume)
+6. Runs `pnpm build`
+
+---
+
+## Step 4: Verify structure
 
 ```bash
 cd ~/workspace/my-mcp-server
@@ -147,9 +246,11 @@ my-mcp-server/
 ├── .gitignore
 ├── docker-compose.dev.yml
 ├── Dockerfile.dev
+├── init-project.sh
 ├── package.json
 ├── pnpm-lock.yaml
 ├── README.md
+├── setup-container.sh
 ├── tsconfig.json
 └── src/
     └── index.ts
@@ -157,7 +258,29 @@ my-mcp-server/
 
 ---
 
-## Step 4: Start developing
+## Step 5: Initialize project & start container
+
+```bash
+# 1) Rename template → your project name
+./init-project.sh my-mcp-server
+
+# 2) Start container and install dependencies
+./setup-container.sh
+```
+
+Or manually:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+docker exec -u root my-mcp-server chown -R node:node /workspace
+docker exec -u node my-mcp-server sh -c \
+  "pnpm config set store-dir /workspace/.pnpm-store && pnpm install"
+docker exec -u node my-mcp-server pnpm build
+```
+
+---
+
+## Step 6: Start developing
 
 ```bash
 code ~/workspace/my-mcp-server
@@ -167,9 +290,15 @@ In VS Code: `Cmd + Shift + P` → **"Dev Containers: Reopen in Container"**
 
 `pnpm install && pnpm build` runs automatically via `postCreateCommand`.
 
+Or attach to the running container:
+
+```bash
+docker exec -it -u node my-mcp-server zsh
+```
+
 ---
 
-## Step 5: Git commit & push
+## Step 7: Git commit & push
 
 Host `~/.gitconfig` and `~/.ssh` are mounted read-only into the container.
 
@@ -186,5 +315,6 @@ git push -u origin main
 ## Cleanup
 
 ```bash
+docker compose -f docker-compose.dev.yml down -v
 docker system prune -f
 ```
