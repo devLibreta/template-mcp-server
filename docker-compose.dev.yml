@@ -1,9 +1,9 @@
 services:
-  ${COMPOSE_PROJECT_NAME:-template-mcp-server}:
+  template-mcp-server:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: ${COMPOSE_PROJECT_NAME:-template-mcp-server}
+    container_name: template-mcp-server
     ports:
       - "${MCP_PORT:-3000}:3000"
     volumes:
