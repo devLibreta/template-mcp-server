@@ -6,20 +6,20 @@
 
 ## 실행 환경
 
-| 항목 | 내용 |
-|------|------|
-| 베이스 이미지 | `node:22-slim` |
-| 기본 셸 | `zsh` |
-| 실행 유저 | `node` (비-root) |
-| 작업 디렉토리 | `/workspace` |
+| 항목          | 내용             |
+| ------------- | ---------------- |
+| 베이스 이미지 | `node:22-slim`   |
+| 기본 셸       | `zsh`            |
+| 실행 유저     | `node` (비-root) |
+| 작업 디렉토리 | `/workspace`     |
 
 ## 포트
 
-| 포트 | 용도 |
-|------|------|
+| 포트   | 용도                           |
+| ------ | ------------------------------ |
 | `3000` | MCP 서버 (SSE/Streamable HTTP) |
-| `6274` | MCP Inspector (UI) |
-| `6277` | MCP Inspector (Proxy) |
+| `6274` | MCP Inspector (UI)             |
+| `6277` | MCP Inspector (Proxy)          |
 
 ## 사용 가능한 기능
 
@@ -42,10 +42,10 @@
 
 ## 볼륨 마운트
 
-| 경로 | 용도 |
-|------|------|
-| `. → /workspace` | 호스트 소스 코드 |
-| `node_modules` | 의존성 캐시 (named volume) |
-| `.pnpm-store` | pnpm 스토어 캐시 (named volume) |
-| `~/.gitconfig` | Git 설정 (read-only) |
-| `~/.ssh` | SSH 키 (read-only) |
+| 경로             | 용도                            |
+| ---------------- | ------------------------------- |
+| `. → /workspace` | 호스트 소스 코드                |
+| `node_modules`   | 의존성 캐시 (named volume)      |
+| `.pnpm-store`    | pnpm 스토어 캐시 (named volume) |
+| `~/.gitconfig`   | Git 설정 (read-only)            |
+| `~/.ssh`         | SSH 키 (read-only)              |
