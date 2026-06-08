@@ -3,6 +3,9 @@
   "dockerComposeFile": "../docker-compose.dev.yml",
   "service": "template-mcp-server",
   "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+  ],
 
   // VS Code 추천 확장 도구
   "customizations": {
